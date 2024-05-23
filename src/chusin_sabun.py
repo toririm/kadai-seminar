@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 x = 1.0
-step_sizes = np.array([10**(-i) for i in range(15)])
+step_sizes = np.array([10 ** (-i) for i in range(15)])
 
 forward_diff = (np.exp(x + step_sizes) - np.exp(x)) / step_sizes
 central_diff = (np.exp(x + step_sizes) - np.exp(x - step_sizes)) / (2 * step_sizes)
