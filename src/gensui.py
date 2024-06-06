@@ -1,16 +1,20 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+
 def dxdt(v):
     return v
 
+
 def dvdt(x, v):
-    return - x - v
+    return -x - v
+
 
 def euler_method(x, v, dt):
     x_new = x + dt * dxdt(v)
     v_new = v + dt * dvdt(x, v)
     return x_new, v_new
+
 
 tini = 0.0
 tfin = 10.0
@@ -34,8 +38,10 @@ for i in range(n):
     vt[i + 1] = v
     time[i + 1] = tini + (i + 1) * dt
 
+
 def exact_x(time):
-    return 2 / (3 ** (1/2)) * np.exp(-time / 2) * np.sin(time * 3 ** (1/2) / 2) 
+    return 2 / (3 ** (1 / 2)) * np.exp(-time / 2) * np.sin(time * 3 ** (1 / 2) / 2)
+
 
 plt.plot(time, xt, label="x(v)")
 plt.plot(time, vt, label="v(t)")

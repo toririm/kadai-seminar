@@ -1,19 +1,23 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+
 def dxdt(v):
     return v
+
 
 def dvdt(x):
     return -x
 
+
 def pred_corr_method(x, v, dt):
     x_pred = x + dt * dxdt(v)
     v_pred = v + dt * dvdt(x)
-    
+
     x_new = x + 0.5 * dt * (dxdt(v) + dxdt(v_pred))
     v_new = v + 0.5 * dt * (dvdt(x) + dvdt(x_pred))
     return x_new, v_new
+
 
 tini = 0.0
 tfin = 10.0

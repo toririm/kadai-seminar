@@ -1,16 +1,20 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+
 def dxdt(v):
     return v
 
+
 def dvdt(x):
     return -x
+
 
 def euler_method(x, v, dt):
     x_new = x + dt * dxdt(v)
     v_new = v + dt * dvdt(x)
     return x_new, v_new
+
 
 tini = 0.0
 tfin = 10.0
