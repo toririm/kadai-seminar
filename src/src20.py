@@ -51,7 +51,7 @@ k0 = 0.85
 sigma0 = 5.0
 
 # time propagation parameters
-Tprop = 200.0
+Tprop = 80.0
 dt = 0.005
 nt = int(Tprop / dt) + 1
 
@@ -81,4 +81,5 @@ plt.plot(xj, np.imag(wf), label="Imaginary part (wf)")
 plt.xlabel("x")
 plt.ylabel("$\psi$(x)")
 plt.legend()
+plt.savefig("src/src20-80.png")
 plt.show()
