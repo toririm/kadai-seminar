@@ -16,12 +16,17 @@ fonttools==4.51.0
     # via matplotlib
 kiwisolver==1.4.5
     # via matplotlib
+llvmlite==0.43.0
+    # via numba
 matplotlib==3.9.0
-    # via phys-prob-explore-seminar
+    # via kadai-seminar
+numba==0.60.0
+    # via kadai-seminar
 numpy==1.26.4
     # via contourpy
+    # via kadai-seminar
     # via matplotlib
-    # via phys-prob-explore-seminar
+    # via numba
 packaging==24.0
     # via matplotlib
 pillow==10.3.0

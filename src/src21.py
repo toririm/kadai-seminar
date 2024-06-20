@@ -1,3 +1,4 @@
+from numba import jit
 from matplotlib import pyplot as plt
 import numpy as np
 import time
@@ -12,9 +13,10 @@ def initialize_wf(xj, x0, k0, sigma0):
 
 
 # Operate the Hamiltonian on the wavefunction
+@jit(nopython=True)
 def ham_wf(wf, vpot, dx):
     n = wf.size
-    hwf = np.zeros(n, dtype=complex)
+    hwf = np.zeros(n, dtype=np.complex128)
 
     for i in range(1, n - 1):
         hwf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i] + wf[i - 1]) / dx**2
@@ -78,7 +80,6 @@ for it in range(nt + 1):
     wf = time_propagation(wf, vpot, dx, dt)
     print(it, nt)
 
-
 end_time = time.time()
 print("Elapsed time was %g seconds" % (end_time - start_time))
 
@@ -88,5 +89,5 @@ plt.plot(xj, np.imag(wf), label="Imaginary part (wf)")
 plt.xlabel("x")
 plt.ylabel("$\psi$(x)")
 plt.legend()
-plt.savefig("src/src20-80.png")
+plt.savefig("src/src21-80.png")
 plt.show()
