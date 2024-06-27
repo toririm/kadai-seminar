@@ -13,6 +13,13 @@ def initialize_wf(xj, x0, k0, sigma0):
     return wf
 
 
+# Initialize potential
+def initialize_vpot(xj):
+    v0 = 0.735
+    sigma_v = 0.5
+    return v0 * np.exp(-0.5 * (xj / sigma_v) ** 2)
+
+
 # Operate the Hamiltonian on the wavefunction
 @jit(nopython=True)
 def ham_wf(wf, vpot, dx):
@@ -74,7 +81,8 @@ for i in range(n):
 
 # initialize the wavefunction
 wf = initialize_wf(xj, x0, k0, sigma0)
-vpot = np.zeros(n)
+# initialize the potential
+vpot = initialize_vpot(xj)
 
 
 wavefunctions = []
@@ -93,6 +101,7 @@ def update_plot(frame):
     plt.ylim([-1.2, 1.2])
     plt.plot(xj, np.real(wavefunctions[frame]), label="Real part of $\psi(x)$")
     plt.plot(xj, np.imag(wavefunctions[frame]), label="Imaginary part of $\psi(x)$")
+    plt.plot(xj, vpot, label="$V(x)$")
     plt.xlabel("$x$")
     plt.ylabel("$\psi(x)$")
     plt.legend()
@@ -101,4 +110,4 @@ def update_plot(frame):
 # Create the animation
 fig = plt.figure()
 ani = animation.FuncAnimation(fig, update_plot, frames=len(wavefunctions), interval=50)
-ani.save("src/src22.gif", writer="pillow")
+ani.save("src/src23.gif", writer="pillow")

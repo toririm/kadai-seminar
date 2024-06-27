@@ -13,6 +13,12 @@ def initialize_wf(xj, x0, k0, sigma0):
     return wf
 
 
+# Initialize potential
+def initialize_vpot(xj):
+    k0 = 1.0
+    return 0.5 * k0 * xj**2
+
+
 # Operate the Hamiltonian on the wavefunction
 @jit(nopython=True)
 def ham_wf(wf, vpot, dx):
@@ -52,19 +58,19 @@ def time_propagation(wf, vpot, dx, dt):
 
 
 # initial wavefunction parameters
-x0 = -25.0
-k0 = 0.85
-sigma0 = 5.0
+x0 = -2.0
+k0 = 0.0
+sigma0 = 1.0
 
 # time propagation parameters
-Tprop = 80.0
+Tprop = 40.0
 dt = 0.005
 nt = int(Tprop / dt) + 1
 
 # set the coordinate
-xmin = -100.0
-xmax = 100.0
-n = 2500
+xmin = -10.0
+xmax = 10.0
+n = 250
 
 dx = (xmax - xmin) / (n + 1)
 xj = np.zeros(n)
@@ -74,7 +80,8 @@ for i in range(n):
 
 # initialize the wavefunction
 wf = initialize_wf(xj, x0, k0, sigma0)
-vpot = np.zeros(n)
+# initialize the potential
+vpot = initialize_vpot(xj)
 
 
 wavefunctions = []
@@ -89,10 +96,12 @@ for it in range(nt + 1):
 # Define function to update plot for each frame of the animation
 def update_plot(frame):
     plt.cla()
-    plt.xlim([-100, 100])
-    plt.ylim([-1.2, 1.2])
+    plt.xlim([-5, 5])
+    plt.ylim([-1.2, 5.0])
     plt.plot(xj, np.real(wavefunctions[frame]), label="Real part of $\psi(x)$")
     plt.plot(xj, np.imag(wavefunctions[frame]), label="Imaginary part of $\psi(x)$")
+    plt.plot(xj, np.abs(wavefunctions[frame]), label="$|\psi(x)|$")
+    plt.plot(xj, vpot, label="$V(x)$")
     plt.xlabel("$x$")
     plt.ylabel("$\psi(x)$")
     plt.legend()
@@ -100,5 +109,5 @@ def update_plot(frame):
 
 # Create the animation
 fig = plt.figure()
-ani = animation.FuncAnimation(fig, update_plot, frames=len(wavefunctions), interval=50)
-ani.save("src/src22.gif", writer="pillow")
+ani = animation.FuncAnimation(fig, update_plot, frames=len(wavefunctions), interval=150)
+ani.save("src/src24.gif", writer="pillow")
