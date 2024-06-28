@@ -1,19 +1,24 @@
-use plotters::prelude::*;
-use ndarray::{Array, ArrayBase, OwnedRepr, Dim};
+use ndarray::{Array, ArrayBase, Dim, OwnedRepr};
 use num::complex::Complex;
+use plotters::prelude::*;
 
-
-
-fn init_wf(xj: &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>, x0: f64, k0: f64, sigma0: f64) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>{
+fn init_wf(
+    xj: &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>,
+    x0: f64,
+    k0: f64,
+    sigma0: f64,
+) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
     let mut wf = Array::zeros(xj.len());
     for i in 0..xj.len() {
-        wf[i] = Complex::new(0.0, k0 * (xj[i] - x0)).exp() * Complex::new(-0.5 * (xj[i] - x0).powi(2) / sigma0.powi(2), 0.0);
+        wf[i] = Complex::new(0.0, k0 * (xj[i] - x0)).exp()
+            * Complex::new(-0.5 * (xj[i] - x0).powi(2) / sigma0.powi(2), 0.0);
     }
     wf
 }
 
-
-fn init_vpot(xj: &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
+fn init_vpot(
+    xj: &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>,
+) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
     let k0 = 1.0;
     let mut vpot = Array::zeros(xj.len());
     for i in 0..xj.len() {
@@ -22,7 +27,11 @@ fn init_vpot(xj: &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>) -> ArrayBase<Owned
     vpot
 }
 
-fn ham_wf(wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>, vpot: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>, dx: f64) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
+fn ham_wf(
+    wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
+    vpot: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
+    dx: f64,
+) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
     let mut hwf = Array::zeros(wf.len());
     for i in 1..(wf.len() - 1) {
         hwf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i] + wf[i - 1]) / dx.powi(2)
@@ -30,16 +39,21 @@ fn ham_wf(wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>, vpot: &Array
 
     let mut i = 0;
     hwf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i]) / dx.powi(2);
-    
+
     i = wf.len() - 1;
-    hwf[i] = -0.5 * (- 2.0 * wf[i] + wf[i - 1]) / dx.powi(2);
+    hwf[i] = -0.5 * (-2.0 * wf[i] + wf[i - 1]) / dx.powi(2);
 
     hwf = hwf + vpot.dot(wf);
 
     hwf
 }
 
-fn time_propagation(wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>, vpot: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>, dx: f64, dt: f64) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
+fn time_propagation(
+    wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
+    vpot: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
+    dx: f64,
+    dt: f64,
+) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
     let mut twf;
     let mut hwf;
     let mut cur_wf = wf.clone();
@@ -56,7 +70,6 @@ fn time_propagation(wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>, vp
 
     cur_wf
 }
-
 
 fn main() {
     println!("Hello, world!");
@@ -95,25 +108,29 @@ fn main() {
         println!("{} {}", it, nt);
     }
 
-    let area = BitMapBackend::gif(
-        "wavefunctions.gif",
-        (800, 600),
-        150
-    ).unwrap().into_drawing_area();
+    let area = BitMapBackend::gif("wavefunctions.gif", (800, 600), 150)
+        .unwrap()
+        .into_drawing_area();
 
     for (i, wf) in wavefunctions.iter().enumerate() {
         area.fill(&WHITE).unwrap();
         let mut chart = ChartBuilder::on(&area)
-            .caption(format!("Wavefunction at t = {:.2}", i as f64 * dt), ("sans-serif", 20).into_font())
+            .caption(
+                format!("Wavefunction at t = {:.2}", i as f64 * dt),
+                ("sans-serif", 20).into_font(),
+            )
             .x_label_area_size(40)
             .y_label_area_size(40)
-            .build_cartesian_2d(xj[0]..xj[n - 1], -1.0..1.0).unwrap();
+            .build_cartesian_2d(xj[0]..xj[n - 1], -1.0..1.0)
+            .unwrap();
 
         chart.configure_mesh().draw().unwrap();
 
-        chart.draw_series(LineSeries::new(
-            xj.iter().zip(wf.iter()).map(|(x, y)| (*x, y.re)),
-            &RED
-        )).unwrap();
+        chart
+            .draw_series(LineSeries::new(
+                xj.iter().zip(wf.iter()).map(|(x, y)| (*x, y.re)),
+                &RED,
+            ))
+            .unwrap();
     }
 }
