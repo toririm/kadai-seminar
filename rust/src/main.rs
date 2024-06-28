@@ -1,136 +1,157 @@
-use ndarray::{Array, ArrayBase, Dim, OwnedRepr};
+use ndarray::{Array, Array1};
 use num::complex::Complex;
 use plotters::prelude::*;
 
-fn init_wf(
-    xj: &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>,
-    x0: f64,
-    k0: f64,
-    sigma0: f64,
-) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
-    let mut wf = Array::zeros(xj.len());
-    for i in 0..xj.len() {
-        wf[i] = Complex::new(0.0, k0 * (xj[i] - x0)).exp()
-            * Complex::new(-0.5 * (xj[i] - x0).powi(2) / sigma0.powi(2), 0.0);
-    }
-    wf
+// Initialize the wavefunction
+fn initialize_wf(xj: &Array1<f64>, x0: f64, k0: f64, sigma0: f64) -> Array1<Complex<f64>> {
+    xj.mapv(|x| {
+        Complex::new(0.0, k0 * (x - x0)).exp()
+            * Complex::new(-0.5 * (x - x0).powi(2) / sigma0.powi(2), 0.0).exp()
+    })
 }
 
-fn init_vpot(
-    xj: &ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>>,
-) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
+// Initialize potential
+fn initialize_vpot(xj: &Array1<f64>) -> Array1<f64> {
     let k0 = 1.0;
-    let mut vpot = Array::zeros(xj.len());
-    for i in 0..xj.len() {
-        vpot[i] = Complex::new(0.0, 0.5 * k0 * xj[i].powi(2));
-    }
-    vpot
+    xj.mapv(|x| 0.5 * k0 * x.powi(2))
 }
 
-fn ham_wf(
-    wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
-    vpot: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
-    dx: f64,
-) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
-    let mut hwf = Array::zeros(wf.len());
-    for i in 1..(wf.len() - 1) {
-        hwf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i] + wf[i - 1]) / dx.powi(2)
+// Operate the Hamiltonian on the wavefunction
+fn ham_wf(wf: &Array1<Complex<f64>>, vpot: &Array1<f64>, dx: f64) -> Array1<Complex<f64>> {
+    let n = wf.len();
+    let mut hwf = Array::zeros(n);
+
+    for i in 1..n - 1 {
+        hwf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i] + wf[i - 1]) / dx.powi(2);
     }
 
-    let mut i = 0;
-    hwf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i]) / dx.powi(2);
+    hwf[0] = -0.5 * (wf[1] - 2.0 * wf[0]) / dx.powi(2);
+    hwf[n - 1] = -0.5 * (-2.0 * wf[n - 1] + wf[n - 2]) / dx.powi(2);
 
-    i = wf.len() - 1;
-    hwf[i] = -0.5 * (-2.0 * wf[i] + wf[i - 1]) / dx.powi(2);
-
-    hwf = hwf + vpot.dot(wf);
-
-    hwf
+    hwf + vpot.mapv(Complex::from) * wf
 }
 
+// Time propagation from t to t + dt
 fn time_propagation(
-    wf: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
-    vpot: &ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>>,
+    wf: &Array1<Complex<f64>>,
+    vpot: &Array1<f64>,
     dx: f64,
     dt: f64,
-) -> ArrayBase<OwnedRepr<Complex<f64>>, Dim<[usize; 1]>> {
-    let mut twf;
+) -> Array1<Complex<f64>> {
+    let mut wf = wf.clone();
+    let mut twf = wf.clone();
     let mut hwf;
-    let mut cur_wf = wf.clone();
-
-    twf = wf.clone();
     let mut zfact = Complex::new(1.0, 0.0);
 
     for iexp in 1..5 {
         zfact *= Complex::new(0.0, -dt) / Complex::new(iexp as f64, 0.0);
-        hwf = ham_wf(&twf, &vpot, dx);
-        cur_wf = cur_wf + zfact * hwf.clone();
-        twf = hwf.clone();
+        hwf = ham_wf(&twf, vpot, dx);
+        wf = wf + zfact * &hwf;
+        twf = hwf;
     }
 
-    cur_wf
+    wf
 }
 
 fn main() {
-    println!("Hello, world!");
-    // initial wavefunction parameters
+    // Initial wavefunction parameters
     let x0 = -2.0;
     let k0 = 0.0;
     let sigma0 = 1.0;
 
-    // time propagation parameters
+    // Time propagation parameters
     let tprop = 40.0;
     let dt = 0.005;
-    let nt = ((tprop / dt) + 1.0) as i32;
+    let nt = (tprop / dt) as usize + 1;
 
-    // set the coordinate
+    // Set the coordinate
     let xmin = -10.0;
     let xmax = 10.0;
     let n = 250;
 
-    let dx = (xmax - xmin) / (n as f64);
-    let mut xj: ArrayBase<OwnedRepr<f64>, Dim<[usize; 1]>> = Array::zeros(n);
+    let dx = (xmax - xmin) / (n as f64 + 1.0);
+    let xj = Array::linspace(xmin + dx, xmax - dx, n);
 
-    for i in 0..n {
-        xj[i] = xmin + (i as f64) * dx;
-    }
+    // Initialize the wavefunction and potential
+    let mut wf = initialize_wf(&xj, x0, k0, sigma0);
+    let vpot = initialize_vpot(&xj);
 
-    let mut wf = init_wf(&xj, x0, k0, sigma0);
-    let vpot = init_vpot(&xj);
-
-    let mut wavefunctions = Vec::new();
-    for it in 0..=nt {
-        if it % (nt / 100) as i32 == 0 {
+    let mut wavefunctions = Vec::with_capacity(nt);
+    for it in 0..nt {
+        if it % (nt / 100) == 0 {
             wavefunctions.push(wf.clone());
         }
-
         wf = time_propagation(&wf, &vpot, dx, dt);
         println!("{} {}", it, nt);
     }
 
-    let area = BitMapBackend::gif("wavefunctions.gif", (800, 600), 150)
+    // Create the animation
+    let root = BitMapBackend::gif("wavefunctions.gif", (800, 600), 150)
         .unwrap()
         .into_drawing_area();
 
     for (i, wf) in wavefunctions.iter().enumerate() {
-        area.fill(&WHITE).unwrap();
-        let mut chart = ChartBuilder::on(&area)
+        root.fill(&WHITE).unwrap();
+        let mut chart = ChartBuilder::on(&root)
             .caption(
-                format!("Wavefunction at t = {:.2}", i as f64 * dt),
+                format!("Wavefunction Animation Frame {}", i),
                 ("sans-serif", 20).into_font(),
             )
-            .x_label_area_size(40)
-            .y_label_area_size(40)
-            .build_cartesian_2d(xj[0]..xj[n - 1], -1.0..1.0)
+            .margin(5)
+            .x_label_area_size(30)
+            .y_label_area_size(30)
+            .build_cartesian_2d(-5.0..5.0, -1.2..5.0)
             .unwrap();
 
         chart.configure_mesh().draw().unwrap();
 
         chart
             .draw_series(LineSeries::new(
-                xj.iter().zip(wf.iter()).map(|(x, y)| (*x, y.re)),
+                xj.iter().zip(wf.iter().map(|x| x.re)).map(|(&x, y)| (x, y)),
                 &RED,
             ))
+            .unwrap()
+            .label("Real part of ψ(x)")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+
+        chart
+            .draw_series(LineSeries::new(
+                xj.iter().zip(wf.iter().map(|x| x.im)).map(|(&x, y)| (x, y)),
+                &BLUE,
+            ))
+            .unwrap()
+            .label("Imaginary part of ψ(x)")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLUE));
+
+        chart
+            .draw_series(LineSeries::new(
+                xj.iter()
+                    .zip(wf.iter().map(|x| x.norm()))
+                    .map(|(&x, y)| (x, y)),
+                &GREEN,
+            ))
+            .unwrap()
+            .label("|ψ(x)|")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &GREEN));
+
+        chart
+            .draw_series(LineSeries::new(
+                xj.iter().zip(vpot.iter()).map(|(&x, &y)| (x, y)),
+                &BLACK,
+            ))
+            .unwrap()
+            .label("V(x)")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
+
+        chart
+            .configure_series_labels()
+            .border_style(&BLACK)
+            .background_style(&WHITE.mix(0.8))
+            .draw()
             .unwrap();
+
+        root.present().unwrap();
     }
+
+    println!("Animation saved as wavefunctions.gif");
 }
