@@ -71,7 +71,17 @@ def calc_expectation_values(wf, xj):
     p_exp = np.real(np.sum(np.conjugate(wf) * pwf) * dx) / norm
     k_exp = np.real(np.sum(np.conjugate(pwf) * pwf / 2.0) * dx) / norm
 
-    return x_exp, p_exp, norm, k_exp
+    n = wf.size
+    twf = np.zeros(n, dtype=complex)
+
+    for i in range(1, n - 1):
+        twf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i] + wf[i - 1]) / dx**2
+    
+    Ekin = np.real(np.sum(np.conjugate(wf) * twf) * dx) / norm
+
+    Epot = np.real(np.sum(np.abs(wf) ** 2 * vpot) * dx) / norm
+
+    return x_exp, p_exp, norm, Ekin, Epot
 
 # initial wavefunction parameters
 x0 = -2.0
@@ -104,8 +114,9 @@ tt = np.zeros(nt + 1)
 xt = np.zeros(nt + 1)
 pt = np.zeros(nt + 1)
 normt = np.zeros(nt + 1)
-kt = np.zeros(nt + 1)
-
+# kt = np.zeros(nt + 1)
+Ekin_t = np.zeros(nt + 1)
+Epot_t = np.zeros(nt + 1)
 
 wavefunctions = []
 for it in range(nt + 1):
@@ -113,7 +124,7 @@ for it in range(nt + 1):
         wavefunctions.append(wf.copy())
 
     tt[it] = dt * it
-    xt[it], pt[it], normt[it], kt[it] = calc_expectation_values(wf, xj)
+    xt[it], pt[it], normt[it], Ekin_t[it], Epot_t[it] = calc_expectation_values(wf, xj)
     wf = time_propagation(wf, vpot, dx, dt)
     print(it, nt)
 
@@ -121,12 +132,22 @@ for it in range(nt + 1):
 plt.plot(tt, xt, label="$<x>$")
 plt.plot(tt, pt, label="$<p>$")
 plt.plot(tt, normt, label="Norm")
-plt.plot(tt, kt, label="$<T>$")
+# plt.plot(tt, kt, label="$<T>$")
 plt.xlabel("$t$")
 plt.ylabel('Quantities')
 plt.legend()
 
 plt.savefig("src/expectation_values.pdf")
+plt.cla()
+
+plt.plot(tt, Ekin_t, label="Kinetic energy")
+plt.plot(tt, Epot_t, label="Potential energy")
+plt.plot(tt, Ekin_t + Epot_t, label="Total energy")
+plt.xlabel("$t$")
+plt.ylabel('Energy')
+plt.legend()
+
+plt.savefig("src/expectation_value_energy.pdf")
 
 # Define function to update plot for each frame of the animation
 # def update_plot(frame):
