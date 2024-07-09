@@ -56,8 +56,8 @@ def time_propagation(wf, vpot, dx, dt):
 
     return wf
 
-def calc_expectation_values(wf, xj):
 
+def calc_expectation_values(wf, xj):
     dx = xj[1] - xj[0]
     norm = np.sum(np.abs(wf) ** 2) * dx
     x_exp = np.sum(xj * np.abs(wf) ** 2) * dx / norm
@@ -76,12 +76,13 @@ def calc_expectation_values(wf, xj):
 
     for i in range(1, n - 1):
         twf[i] = -0.5 * (wf[i + 1] - 2.0 * wf[i] + wf[i - 1]) / dx**2
-    
+
     Ekin = np.real(np.sum(np.conjugate(wf) * twf) * dx) / norm
 
     Epot = np.real(np.sum(np.abs(wf) ** 2 * vpot) * dx) / norm
 
     return x_exp, p_exp, norm, Ekin, Epot
+
 
 # initial wavefunction parameters
 x0 = -2.0
@@ -134,7 +135,7 @@ plt.plot(tt, pt, label="$<p>$")
 plt.plot(tt, normt, label="Norm")
 # plt.plot(tt, kt, label="$<T>$")
 plt.xlabel("$t$")
-plt.ylabel('Quantities')
+plt.ylabel("Quantities")
 plt.legend()
 
 plt.savefig("src/expectation_values.pdf")
@@ -144,7 +145,7 @@ plt.plot(tt, Ekin_t, label="Kinetic energy")
 plt.plot(tt, Epot_t, label="Potential energy")
 plt.plot(tt, Ekin_t + Epot_t, label="Total energy")
 plt.xlabel("$t$")
-plt.ylabel('Energy')
+plt.ylabel("Energy")
 plt.legend()
 
 plt.savefig("src/expectation_value_energy.pdf")
